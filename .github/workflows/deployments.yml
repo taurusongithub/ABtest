@@ -1,0 +1,46 @@
+name: Deploy
+
+on:
+  # manual
+  - workflow_dispatch
+
+jobs:
+  DEV_deployment:
+    runs-on: ubuntu-latest
+    environment: DEV
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up conda environment
+        run: conda env create -f ./environment.yml
+      - name: Update pip
+        run: $CONDA/envs/abtests/bin/python -m pip install --upgrade pip
+      - name: Install dependencies with pip
+        run: $CONDA/envs/abtests/bin/python -m pip install -r requirements.txt
+      - name: Build package
+        run: |
+          $CONDA/envs/abtests/bin/python -m pip install --upgrade build
+          $CONDA/envs/abtests/bin/python -m build
+      - name: Upload to PyPi
+        run: |
+          $CONDA/envs/abtests/bin/python -m pip install --upgrade twine
+          $CONDA/envs/abtests/bin/python -m twine upload --repository testpypi dist/* -u __token__ -p ${{ secrets.PYPI_TOKEN }}
+
+  Testing_DEV_deployment:
+    runs-on: ubuntu-latest
+    needs: DEV_deployment
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up conda environment
+        run: conda env create -f ./environment.yml
+      - name: Update pip
+        run: $CONDA/envs/abtests/bin/python -m pip install --upgrade pip
+      - name: Install dependencies with pip
+        run: $CONDA/envs/abtests/bin/python -m pip install -r requirements.txt
+      - name: Install data structures from TestPyPi
+        run: $CONDA/envs/abtests/bin/python -m pip install --index-url https://test.pypi.org/simple/ abtests-nicorodc
+      - name: Install JuyterLab
+        run: conda install -n abtests jupyterlab -c conda-forge -y
+      - name: Run Jupyter Notebook
+        run: $CONDA/envs/abtests/bin/jupyter nbconvert --to notebook example.ipynb --execute --inplace --allow-errors
+      - uses: stefanzweifel/git-auto-commit-action@v4
+  
