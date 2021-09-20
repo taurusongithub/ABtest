@@ -1,7 +1,6 @@
 __all__ = ["equals_hypothesis"]
 
 from math import sqrt
-import numpy as np
 from scipy.stats import norm
 
 
@@ -20,20 +19,18 @@ def correction(avg: float, size: int, sigmas: float) -> float:
     return 1 / inv_corr
 
 
-def equals_hypothesis(a_results: np.array,
-                      b_results: np.array,
+def equals_hypothesis(a_len: int, a_successes: int,
+                      b_len: int, b_successes: int,
                       verbose: int = 0) -> float:
     """P-value when testing of means are equal."""
 
-    a_len = len(a_results)
-    b_len = len(b_results)
     if verbose == 1:
         print("A has", a_len, "elements")
         print("B has", b_len, "elements")
 
-    xa = np.mean(a_results)
-    xb = np.mean(b_results)
-    x = (np.sum(a_results) + np.sum(b_results)) / (a_len + b_len)
+    xa = a_successes / a_len
+    xb = b_successes / b_len
+    x = (a_successes + b_successes) / (a_len + b_len)
 
     d = xa - xb
     std = sqrt(x * (1 - x) * (1 / a_len + 1 / b_len))
