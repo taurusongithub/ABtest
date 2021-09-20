@@ -19,51 +19,46 @@ def correction(avg: float, size: int, sigmas: float) -> float:
     return 1 / inv_corr
 
 
-def equals_hypothesis(a_len: int, a_successes: int,
-                      b_len: int, b_successes: int,
-                      verbose: int = 0,
-                      alternative: str = "two-sided") -> float:
-    """P-value when testing of means are equal."""
-
-    if verbose == 1:
-        print("A has", a_len, "elements")
-        print("B has", b_len, "elements")
-
+def normalized_difference(a_len: int, a_successes: int,
+                          b_len: int, b_successes: int, sigmas: float) -> dict:
     xa = a_successes / a_len
     xb = b_successes / b_len
     x = (a_successes + b_successes) / (a_len + b_len)
-
-    d = xa - xb
     std = sqrt(x * (1 - x) * (1 / a_len + 1 / b_len))
-    value = d/std
-    if verbose == 1:
-        print("statistic", value)
+    stat_corr = {"value": (xa - xb) / std,
+                 "correction": correction(avg=x,
+                                          size=(a_len + b_len),
+                                          sigmas=sigmas)}
+    return stat_corr
 
-    corr = correction(avg=x, size=(a_len + b_len), sigmas=5)
-    if verbose == 1:
-        print("correction", corr)
-    if alternative in ["two-sided", "2s", "a!=b"]:
-        p_value = 2 * norm.sf(abs(value) * corr)
-    elif alternative == "a>b":
-        if value <= 0:
-            if verbose == 1:
-                print("P-value capped at 0.5")
-            p_value = 0.5
-        else:
-            p_value = norm.sf(value * corr)
-    elif alternative == "a<b":
-        if value >= 0:
-            if verbose == 1:
-                print("P-value capped at 0.5")
-            p_value = 0.5
-        else:
-            p_value = norm.sf(-value * corr)
-    else:
+
+def equals_hypothesis(a_len: int, a_successes: int,
+                      b_len: int, b_successes: int,
+                      verbose: int = 0, corr_sigma: float = 5.0,
+                      alternative: str = "two-sided") -> float:
+    """P-value when testing of means are equal."""
+
+    if alternative not in ["two-sided", "2s", "a!=b", "a>b", "a<b"]:
         msg = ("alternative must be one of 'two-sided', '2s', 'a!=b', "
                + "'a>b' or 'a<b'")
         raise ValueError(msg)
 
+    stat_corr = normalized_difference(a_len, a_successes,
+                                      b_len, b_successes, corr_sigma)
     if verbose == 1:
-        print("pval", p_value)
+        print("A has", a_len, "elements")
+        print("B has", b_len, "elements")
+        print("statistic", stat_corr["value"])
+        print("correction", stat_corr["correction"])
+
+    p_value = norm.sf(abs(stat_corr["value"]) * stat_corr["correction"])
+
+    if alternative in ["two-sided", "2s", "a!=b"]:
+        p_value *= 2
+    elif ((alternative == "a>b" and stat_corr["value"] <= 0)
+          or (alternative == "a<b" and stat_corr["value"] >= 0)):
+        if verbose == 1:
+            print("P-value capped at 0.5")
+        p_value = 0.5
 
     return p_value
