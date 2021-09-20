@@ -21,7 +21,8 @@ def correction(avg: float, size: int, sigmas: float) -> float:
 
 def equals_hypothesis(a_len: int, a_successes: int,
                       b_len: int, b_successes: int,
-                      verbose: int = 0) -> float:
+                      verbose: int = 0,
+                      alternative: str = "two-sided") -> float:
     """P-value when testing of means are equal."""
 
     if verbose == 1:
@@ -34,15 +35,34 @@ def equals_hypothesis(a_len: int, a_successes: int,
 
     d = xa - xb
     std = sqrt(x * (1 - x) * (1 / a_len + 1 / b_len))
-    value = abs(d)/std
+    value = d/std
     if verbose == 1:
         print("statistic", value)
 
     corr = correction(avg=x, size=(a_len + b_len), sigmas=5)
     if verbose == 1:
         print("correction", corr)
+    if alternative in ["two-sided", "2s", "a!=b"]:
+        p_value = 2 * norm.sf(abs(value) * corr)
+    elif alternative == "a>b":
+        if value <= 0:
+            if verbose == 1:
+                print("P-value capped at 0.5")
+            p_value = 0.5
+        else:
+            p_value = norm.sf(value * corr)
+    elif alternative == "a<b":
+        if value >= 0:
+            if verbose == 1:
+                print("P-value capped at 0.5")
+            p_value = 0.5
+        else:
+            p_value = norm.sf(-value * corr)
+    else:
+        msg = ("alternative must be one of 'two-sided', '2s', 'a!=b', "
+               + "'a>b' or 'a<b'")
+        raise ValueError(msg)
 
-    p_value = 2 * norm.sf(value * corr)
     if verbose == 1:
         print("pval", p_value)
 
