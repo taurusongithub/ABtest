@@ -5,8 +5,8 @@ from scipy.stats import norm
 
 
 def f_derivative(x: float) -> float:
-    value = 1 - 2 * x
-    value /= 2 * sqrt(x * (1 - x))
+    value = 1/2 - x
+    value /= sqrt(x * (1 - x))
     return value
 
 
