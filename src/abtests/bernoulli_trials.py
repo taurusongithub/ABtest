@@ -42,7 +42,7 @@ def equals_hypothesis(a_len: int, a_successes: int,
     corr = correction(avg=x, size=(a_len + b_len), sigmas=5)
     if verbose == 1:
         print("correction", corr)
-    if alternative in ["two-sided", "2s", "a==b"]:
+    if alternative in ["two-sided", "2s", "a!=b"]:
         p_value = 2 * norm.sf(abs(value) * corr)
     elif alternative == "a>b":
         if value <= 0:
@@ -59,7 +59,7 @@ def equals_hypothesis(a_len: int, a_successes: int,
         else:
             p_value = norm.sf(-value * corr)
     else:
-        msg = ("alternative must be one of 'two-sided', '2s', 'a==b', "
+        msg = ("alternative must be one of 'two-sided', '2s', 'a!=b', "
                + "'a>b' or 'a<b'")
         raise ValueError(msg)
 
