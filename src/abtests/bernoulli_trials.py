@@ -30,7 +30,7 @@ def equals_hypothesis(a_len: int, a_successes: int,
 
     xa = a_successes / a_len
     xb = b_successes / b_len
-    x = (a_successes +b_successes) / (a_len + b_len)
+    x = (a_successes + b_successes) / (a_len + b_len)
 
     d = xa - xb
     std = sqrt(x * (1 - x) * (1 / a_len + 1 / b_len))
