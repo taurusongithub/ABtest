@@ -4,6 +4,6 @@ channels:
   - conda-forge
 
 dependencies:
-  - python>=3
+  - python>=3.5.4
   - pip
   - scipy>=1.7.1
