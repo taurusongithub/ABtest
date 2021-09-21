@@ -2,6 +2,7 @@ __all__ = ["equals_hypothesis"]
 
 from math import sqrt
 from scipy.stats import norm
+from typing import NoReturn
 
 
 def f_derivative(x: float) -> float:
@@ -10,24 +11,41 @@ def f_derivative(x: float) -> float:
     return value
 
 
+def conf_interval(avg: float, size: int, sigmas: float) -> dict:
+    std = sqrt(avg * (1 - avg) / size)
+    conf_int = {"left": avg - sigmas * std,
+                "right": avg + sigmas * std}
+    return conf_int
+
+
 def correction(avg: float, size: int, sigmas: float) -> float:
-    std = sqrt(avg * (1-avg) / size)
-    left_ = avg - sigmas * std
-    right_ = avg + sigmas * std
-    max_derivative = max(abs(f_derivative(left_)), abs(f_derivative(right_)))
+    conf_int = conf_interval(avg, size, sigmas)
+    max_derivative = max(abs(f_derivative(conf_int["left"])),
+                         abs(f_derivative(conf_int["right"])))
     inv_corr = 1 + sigmas * max_derivative/sqrt(size)
     return 1 / inv_corr
 
 
+def size_conditions(avg: float, size: int, sigmas: float) -> NoReturn:
+    assert size * avg > 5, "avg is too close to zero"
+    assert size * (1 - avg) > 5, "avg is too close to one"
+    conf_int = conf_interval(avg, size, sigmas)
+    assert conf_int["left"] > 0, "conf int lower than zero"
+    assert conf_int["right"] < 1, "conf int greater than one"
+
+
 def normalized_difference(a_len: int, a_successes: int,
-                          b_len: int, b_successes: int, sigmas: float) -> dict:
+                          b_len: int, b_successes: int,
+                          sigmas: float) -> dict:
     xa = a_successes / a_len
     xb = b_successes / b_len
     x = (a_successes + b_successes) / (a_len + b_len)
     std = sqrt(x * (1 - x) * (1 / a_len + 1 / b_len))
+    size = a_len + b_len
+    size_conditions(avg=x, size=size, sigmas=sigmas)
     stat_corr = {"value": (xa - xb) / std,
                  "correction": correction(avg=x,
-                                          size=(a_len + b_len),
+                                          size=size,
                                           sigmas=sigmas)}
     return stat_corr
 
